@@ -29,7 +29,7 @@ services:
     restart: on-failure
 
   kong:
-    build: .
+    image: zeabix-kong:1.0.4
     user: "kong"
     depends_on:
       kong-database:
@@ -52,7 +52,7 @@ services:
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_ADMIN_LISTEN: 0.0.0.0:8001, 0.0.0.0:8444 ssl
-      KONG_PLUGINS: "bundled,oidc"
+      KONG_PLUGINS: "bundled,oidc,role-checker"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
