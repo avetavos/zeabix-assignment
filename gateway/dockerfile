@@ -1,0 +1,24 @@
+FROM kong:latest
+
+USER root
+
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    build-essential \
+    libssl-dev \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN luarocks install lua-resty-jwt && \
+    luarocks install lua-resty-http && \
+    luarocks install lua-resty-openidc
+
+# Install Kong 3.x compatible OIDC plugin from revomatico fork
+RUN git clone https://github.com/revomatico/kong-oidc.git /tmp/kong-oidc && \
+    cd /tmp/kong-oidc && \
+    luarocks make
+
+RUN rm -rf /tmp/kong-oidc
+
+USER kong
