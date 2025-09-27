@@ -2,17 +2,19 @@ services:
   kong-database:
     image: postgres:15
     environment:
-      POSTGRES_USER: kong
-      POSTGRES_PASSWORD: kongpass
-      POSTGRES_DB: kong
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "kong"]
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}"]
       interval: 30s
       timeout: 30s
       retries: 3
     restart: on-failure
     volumes:
       - kong_data:/var/lib/postgresql/data
+    env_file:
+      - ./.env
 
   kong-migrations:
     image: kong:latest
@@ -21,12 +23,14 @@ services:
       kong-database:
         condition: service_healthy
     environment:
-      KONG_DATABASE: postgres
+      KONG_DATABASE: ${KONG_DATABASE}
       KONG_PG_HOST: kong-database
-      KONG_PG_USER: kong
-      KONG_PG_PASSWORD: kongpass
-      KONG_PG_DATABASE: kong
+      KONG_PG_USER: ${KONG_PG_USER}
+      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD}
+      KONG_PG_DATABASE: ${KONG_PG_DATABASE}
     restart: on-failure
+    env_file:
+      - ./.env
 
   kong:
     image: zeabix-kong:1.0.4
@@ -42,11 +46,11 @@ services:
       - "127.0.0.1:8001:8001"
       - "127.0.0.1:8444:8444"
     environment:
-      KONG_DATABASE: postgres
+      KONG_DATABASE: ${KONG_DATABASE}
       KONG_PG_HOST: kong-database
-      KONG_PG_USER: kong
-      KONG_PG_PASSWORD: kongpass
-      KONG_PG_DATABASE: kong
+      KONG_PG_USER: ${KONG_PG_USER}
+      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD}
+      KONG_PG_DATABASE: ${KONG_PG_DATABASE}
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
@@ -61,6 +65,8 @@ services:
       timeout: 10s
       retries: 10
     restart: on-failure
+    env_file:
+      - ./.env
 
 volumes:
   kong_data:
