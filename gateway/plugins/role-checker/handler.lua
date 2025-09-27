@@ -2,7 +2,7 @@ local kong = kong
 local cjson = require "cjson"
 local RoleChecker = {
   PRIORITY = 1000,
-  VERSION = "1.3",
+  VERSION = "1.6",
 }
 
 function RoleChecker:access(config)
@@ -31,6 +31,10 @@ function RoleChecker:access(config)
   local user_roles = {}
   if claims.realm_access and claims.realm_access.roles then
     user_roles = claims.realm_access.roles
+  end
+
+  if claims.sub then
+    kong.service.request.set_header("X-User-Id", claims.sub)
   end
 
   -- Check if at least one required role exists
