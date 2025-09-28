@@ -33,7 +33,7 @@ services:
       - ./.env
 
   kong:
-    image: zeabix-kong:1.0.6
+    image: zeabix-kong:1.0.7
     user: "kong"
     depends_on:
       kong-database:
