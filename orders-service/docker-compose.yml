@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  order-db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - order_data:/var/lib/postgresql/data
+    env_file:
+      - ./.env
+
+volumes:
+  order_data:
