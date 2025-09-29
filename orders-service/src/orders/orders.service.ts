@@ -1,26 +1,78 @@
 import { Injectable } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
+import { PrismaService } from '../prisma.service';
+import { Order, OrderStatus, OrderItem, Outbox } from '@prisma/client';
 
 @Injectable()
 export class OrdersService {
-  create(createOrderDto: CreateOrderDto) {
-    return 'This action adds a new order';
+  constructor(private prisma: PrismaService) {}
+  async create(
+    userId: string,
+    createOrderDto: CreateOrderDto,
+    traceId: string,
+  ): Promise<Order & { items: OrderItem[] }> {
+    const newOrder: Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'version'> =
+      {
+        customerId: userId,
+        status: OrderStatus.PENDING,
+      };
+
+    const orderItems: Omit<OrderItem, 'id' | 'orderId'>[] =
+      createOrderDto.items.map((item, index) => ({
+        lineNo: index + 1,
+        sku: item.sku,
+        qty: item.qty,
+      }));
+
+    const outboxEvent: Omit<
+      Outbox,
+      'id' | 'createdAt' | 'correlationId' | 'idempotencyKey'
+    > = {
+      aggregateId: '',
+      type: 'OrderPlaced',
+      payload: JSON.parse(JSON.stringify(createOrderDto.items)),
+      processedAt: null,
+      traceId,
+    };
+
+    const order = await this.prisma.$transaction(async (prisma) => {
+      const createdOrder = await prisma.order.create({
+        data: newOrder,
+      });
+
+      const orderItemsWithOrderId = orderItems.map((item) => ({
+        ...item,
+        orderId: createdOrder.id,
+      }));
+
+      await prisma.orderItem.createMany({
+        data: orderItemsWithOrderId,
+      });
+
+      await prisma.outbox.create({
+        data: {
+          ...outboxEvent,
+          aggregateId: createdOrder.id,
+        },
+      });
+
+      const orderWithItems = await prisma.order.findUnique({
+        where: { id: createdOrder.id },
+        include: { items: true },
+      });
+
+      return orderWithItems;
+    });
+
+    return order;
   }
 
-  findAll() {
-    return `This action returns all orders`;
-  }
+  async findOne(id: string): Promise<(Order & { items: OrderItem[] }) | null> {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { items: true },
+    });
 
-  findOne(id: number) {
-    return `This action returns a #${id} order`;
-  }
-
-  update(id: number, updateOrderDto: UpdateOrderDto) {
-    return `This action updates a #${id} order`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} order`;
+    return order;
   }
 }

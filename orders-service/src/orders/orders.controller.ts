@@ -3,40 +3,65 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
+  Req,
+  Logger,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
 
 @Controller('orders')
 export class OrdersController {
+  private readonly logger = new Logger(OrdersController.name);
+
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
-  create(@Body() createOrderDto: CreateOrderDto) {
-    return this.ordersService.create(createOrderDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.ordersService.findAll();
+  async create(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() createOrderDto: CreateOrderDto,
+  ) {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+      const traceId = req.headers['x-kong-request-id'] as string;
+      const result = await this.ordersService.create(
+        userId,
+        createOrderDto,
+        traceId,
+      );
+      res.status(HttpStatus.CREATED).json({
+        message: 'Order created successfully',
+        data: result,
+      });
+    } catch (error) {
+      this.logger.error('Error creating order', error as any);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+        message: 'Internal server error',
+      });
+    }
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.ordersService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.ordersService.update(+id, updateOrderDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.ordersService.remove(+id);
+  async findOne(@Res() res: Response, @Param('id') id: string) {
+    try {
+      const result = await this.ordersService.findOne(id);
+      if (result == null) {
+        res.status(HttpStatus.NOT_FOUND).send({ message: 'Order not found' });
+        return;
+      }
+      res.status(HttpStatus.OK).json({
+        message: 'Order fetched successfully',
+        data: result,
+      });
+    } catch (error) {
+      this.logger.error('Error fetching order', error as any);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+        message: 'Internal server error',
+      });
+    }
   }
 }
