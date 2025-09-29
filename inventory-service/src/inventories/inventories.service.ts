@@ -1,26 +1,39 @@
 import { Injectable } from '@nestjs/common';
-import { CreateInventoryDto } from './dto/create-inventory.dto';
-import { UpdateInventoryDto } from './dto/update-inventory.dto';
+import { AdjustInventoryDto } from './dto/adjust-inventory.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Inventory } from './schemas/inventory.schema';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class InventoriesService {
-  create(createInventoryDto: CreateInventoryDto) {
-    return 'This action adds a new inventory';
+  constructor(
+    @InjectModel(Inventory.name) private inventoryModel: Model<Inventory>,
+  ) {}
+
+  async adjustStock(
+    adjustInventoryDto: AdjustInventoryDto,
+  ): Promise<Inventory> {
+    const { sku, delta } = adjustInventoryDto;
+    const existingInventory = await this.inventoryModel.findOne({ sku });
+
+    if (existingInventory) {
+      existingInventory.available += delta;
+      return existingInventory.save();
+    }
+
+    const newInventory = new this.inventoryModel({
+      sku,
+      available: delta,
+      reserved: 0,
+    });
+
+    await newInventory.save();
+
+    return newInventory;
   }
 
-  findAll() {
-    return `This action returns all inventories`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} inventory`;
-  }
-
-  update(id: number, updateInventoryDto: UpdateInventoryDto) {
-    return `This action updates a #${id} inventory`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} inventory`;
+  async findBySku(sku: string): Promise<Inventory | null> {
+    const inventory = await this.inventoryModel.findOne({ sku });
+    return inventory;
   }
 }
