@@ -1,0 +1,26 @@
+{
+  "name": "inventories-mongodb-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.mongodb.MongoDbConnector",
+    "mongodb.connection.string": "mongodb://mongo1:27017,mongo2:27017,mongo3:27017/inventories_db?replicaSet=my-mongo-set",
+    "mongodb.name": "inventories-db-server",
+    "collection.include.list": "inventories_db.outbox",
+    "database.include.list": "inventories_db",
+    "transforms": "route",
+    "transforms.route.type": "org.apache.kafka.connect.transforms.RegexRouter",
+    "transforms.route.regex": "([^.]+)\\.([^.]+)\\.([^.]+)",
+    "transforms.route.replacement": "inventories.$3",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter.schemas.enable": "false",
+    "topic.prefix": "inventories",
+    "snapshot.mode": "initial",
+    "mongodb.poll.interval.ms": "1000",
+    "mongodb.heartbeat.interval.ms": "0",
+    "mongodb.connect.timeout.ms": "10000",
+    "mongodb.socket.timeout.ms": "0",
+    "mongodb.selection.timeout.ms": "30000",
+    "tombstones.on.delete": "false"
+  }
+}

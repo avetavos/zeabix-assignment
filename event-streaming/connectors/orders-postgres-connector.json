@@ -1,0 +1,32 @@
+{
+  "name": "orders-postgres-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "orders-service-order-db-1",
+    "topic.prefix": "orders",
+    "database.port": "5432",
+    "database.user": "orders_user",
+    "database.password": "orders_password",
+    "database.dbname": "orders_db",
+    "database.server.name": "orders-db-server",
+    "table.include.list": "public.outbox",
+    "database.history.kafka.bootstrap.servers": "event-kafka-broker:9092",
+    "database.history.kafka.topic": "dbhistory.orders",
+    "include.schema.changes": "true",
+    "slot.name": "debezium_orders",
+    "plugin.name": "pgoutput",
+    "publication.name": "dbz_orders_publication",
+    "publication.autocreate.mode": "filtered",
+    "snapshot.mode": "initial",
+    "decimal.handling.mode": "double",
+    "time.precision.mode": "adaptive",
+    "transforms": "route",
+    "transforms.route.type": "org.apache.kafka.connect.transforms.RegexRouter",
+    "transforms.route.regex": "([^.]+)\\.([^.]+)\\.([^.]+)",
+    "transforms.route.replacement": "orders.$3",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter.schemas.enable": "false"
+  }
+}
