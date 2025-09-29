@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id         String      @id @default(uuid())
+  customerId String      @map("customer_id")
+  status     OrderStatus @default(PENDING)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  version    Int         @default(1)
+
+  items       OrderItem[]
+  outbox      Outbox[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  orderId String @map("order_id")
+  lineNo  Int    @map("line_no")
+  sku     String
+  qty     Int
+
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@id([orderId, lineNo])
+  @@index([sku])
+  @@map("order_items")
+}
+
+model Outbox {
+  id             String   @id @default(uuid())
+  aggregateId    String @map("aggregate_id")
+  type           String
+  payload        Json
+  createdAt      DateTime @default(now()) @map("created_at")
+  processedAt    DateTime? @map("processed_at")
+  traceId        String? @map("trace_id")
+  correlationId  String? @map("correlation_id")
+  idempotencyKey String? @map("idempotency_key")
+
+  order          Order?   @relation(fields: [aggregateId], references: [id])
+
+  @@index([processedAt])
+  @@map("outbox")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
