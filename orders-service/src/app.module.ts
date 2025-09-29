@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { OrdersModule } from './orders/orders.module';
 import configuration from './config/configuration';
 import { PrismaService } from './prisma.service';
+import { KafkaModule } from './kafka/kafka.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { PrismaService } from './prisma.service';
       isGlobal: true,
       load: [configuration],
     }),
+    KafkaModule,
     OrdersModule,
   ],
   controllers: [AppController],

@@ -35,8 +35,8 @@ export class OrdersService {
       traceId,
     };
 
-    const order = await this.prisma.$transaction(async (prisma) => {
-      const createdOrder = await prisma.order.create({
+    const order = await this.prisma.$transaction(async (tx) => {
+      const createdOrder = await tx.order.create({
         data: newOrder,
       });
 
@@ -45,18 +45,18 @@ export class OrdersService {
         orderId: createdOrder.id,
       }));
 
-      await prisma.orderItem.createMany({
+      await tx.orderItem.createMany({
         data: orderItemsWithOrderId,
       });
 
-      await prisma.outbox.create({
+      await tx.outbox.create({
         data: {
           ...outboxEvent,
           aggregateId: createdOrder.id,
         },
       });
 
-      const orderWithItems = await prisma.order.findUnique({
+      const orderWithItems = await tx.order.findUnique({
         where: { id: createdOrder.id },
         include: { items: true },
       });
@@ -74,5 +74,28 @@ export class OrdersService {
     });
 
     return order;
+  }
+
+  async handleOrderProcessed(
+    outboxId: string,
+    orderId: string,
+    processStatus: string,
+  ): Promise<void> {
+    const orderStatus =
+      processStatus === 'OrderConfirmed'
+        ? OrderStatus.CONFIRMED
+        : OrderStatus.CANCELLED;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: orderStatus },
+      });
+
+      await tx.outbox.update({
+        where: { id: outboxId },
+        data: { type: processStatus, processedAt: new Date() },
+      });
+    });
   }
 }
