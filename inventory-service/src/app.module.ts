@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { InventoriesModule } from './inventories/inventories.module';
 import configuration from 'src/config/configuration';
 import { MongooseModule } from '@nestjs/mongoose';
+import { KafkaModule } from './kafka/kafka.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { MongooseModule } from '@nestjs/mongoose';
       }),
       inject: [ConfigService],
     }),
+    KafkaModule,
     InventoriesModule,
   ],
   controllers: [AppController],
