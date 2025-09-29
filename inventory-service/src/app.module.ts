@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { InventoriesModule } from './inventories/inventories.module';
-import configuration from 'config/configuration';
+import configuration from 'src/config/configuration';
 import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
