@@ -84,14 +84,7 @@ cp .env.example .env
 sudo docker-compose up -d
 ```
 
-### 3. **Initialize MongoDB Replica Set (for inventory-service)**
-If using a single node, add `--replSet rs0` to the MongoDB command and run:
-```bash
-docker exec -it inventory-mongodb mongosh
-rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "localhost:27017" }] })
-```
-
-### 4. **Check Service Health**
+### 3. **Check Service Health**
 - Inventory: http://localhost:<inventory-port>/health
 - Orders: http://localhost:<orders-port>/health
 
@@ -130,7 +123,6 @@ rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "localhost:27017" }] })
 
 ## 📝 Notes
 - Ensure all `.env` files are configured for your local environment.
-- For MongoDB transactions, replica set mode is required.
 - For CDC, Debezium connectors must be running and properly configured.
 
 ---
